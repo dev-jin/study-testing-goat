@@ -37,6 +37,7 @@ class NewVisitorTest(unittest.TestCase):
         rows = table.find_elements_by_tag_name('tr')
         self.assertTrue(
                 any(row.text == '1: 책상정리' for row in rows),
+                "신규 작업이 테이블에 표시되지 않는다"
         )
         
         # 추가 아이템 입력이 가능한 텍스트 상자가 있음
