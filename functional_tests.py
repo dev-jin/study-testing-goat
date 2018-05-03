@@ -36,18 +36,19 @@ class NewVisitorTest(unittest.TestCase):
         table = self.browser.find_element_by_id('id_list_table')
         rows = table.find_elements_by_tag_name('tr')
 
-        # self.assertTrue(
-        #     any(row.text == '1: 책상정리' for row in rows),
-        #     "신규 작업이 테이블에 표시되지 않는다 -- 상세 내용 표시 : %s" % (table.text,)
-        # )
-
         self.assertIn('1: 책상정리', [row.text for row in rows])
 
         # 추가 아이템 입력이 가능한 텍스트 상자가 있음
         # "서랍정리"라고 텍스트 입력
-        self.fail('Finish the test!')
+        inputbox = self.browser.find_element_by_id('id_new_item')
+        inputbox.send_keys('서랍정리')
+        inputbox.send_keys(Keys.ENTER)
 
         # 페이지 갱신 후 두개의 아이템을 확인 가능
+        table = self.browser.find_element_by_id('id_list_table')
+        rows = table.find_elements_by_tag_name('tr')
+        self.assertIn('1: 책상정리', [row.text for row in rows])
+        self.assertIn('2: 서랍정리', [row.text for row in rows])
 
         # 사이트는 개인별로 특정 URL을 생성해 준다
 
