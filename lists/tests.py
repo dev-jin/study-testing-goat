@@ -16,9 +16,22 @@ class HomePageTest(TestCase):
         request = HttpRequest()
         response = home_page(request)
 
-        # self.assertTrue(response.content.startswith(b'<html>'))
-        # self.assertIn(b'<title>To-Do lists</title>', response.content)
-        # self.assertTrue(response.content.strip().endswith(b'</html>'))
         expected_html = render_to_string('home.html')
+
+        self.assertEqual(response.content.decode(), expected_html)
+
+    def test_home_page_can_save_a_POST_request(self):
+        request = HttpRequest()
+        request.method = 'POST'
+        request.POST['item_text'] = '신규 작업 아이템'  # 설정 (Setup)
+
+        response = home_page(request)  # 처리 (Exercise)
+
+        self.assertIn('신규 작업 아이템', response.content.decode())  # 어설션 (Assert)
+
+        expected_html = render_to_string(
+            'home.html',
+            {'new_item_text': '신규 작업 아이템'}
+        )
         self.assertEqual(response.content.decode(), expected_html)
 
