@@ -33,5 +33,6 @@ class HomePageTest(TestCase):
             'home.html',
             {'new_item_text': '신규 작업 아이템'}
         )
+
         self.assertEqual(response.content.decode(), expected_html)
 
