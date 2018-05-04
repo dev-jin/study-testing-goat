@@ -1,3 +1,5 @@
+import re
+
 from django.urls import resolve
 from django.test import TestCase
 from django.http import HttpRequest
@@ -9,6 +11,10 @@ from lists.models import Item
 
 class HomePageTest(TestCase):
 
+    def remove_csrf(origin):
+        csrf_regex = r'<input[^>]+csrfmiddlewaretoken[^>]+>'
+        return re.sub(csrf_regex, '', origin)
+
     def test_root_url_resolves_to_home_page_view(self):
         found = resolve('/')
         self.assertEqual(found.func, home_page)
@@ -17,25 +23,47 @@ class HomePageTest(TestCase):
         request = HttpRequest()
         response = home_page(request)
 
-        expected_html = render_to_string('home.html')
+        expected_html = self.remove_csrf(render_to_string('home.html'))
+        response_decode = self.remove_csrf(response.content.decode())
 
-        self.assertEqual(response.content.decode(), expected_html)
+        # csrf_token 으로 assertEqual 실패
+        self.assertEqual(response_decode, expected_html)
 
     def test_home_page_can_save_a_POST_request(self):
         request = HttpRequest()
         request.method = 'POST'
-        request.POST['id_new_item'] = '신규 작업 아이템'  # 설정 (Setup)
+        request.POST['item_text'] = '신규 작업 아이템'  # 설정 (Setup)
+
+        home_page(request)  # 처리 (Exercise)
+
+        self.assertEqual(Item.objects.count(), 1)
+        new_item = Item.objects.first()
+        self.assertEqual(new_item.text, '신규 작업 아이템')
+
+    def test_home_page_redirects_after_POST(self):
+        request = HttpRequest()
+        request.method = 'POST'
+        request.POST['item_text'] = '신규 작업 아이템'  # 설정 (Setup)
 
         response = home_page(request)  # 처리 (Exercise)
 
-        self.assertIn('신규 작업 아이템', response.content.decode())  # 어설션 (Assert)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['location'], '/')
 
-        expected_html = render_to_string(
-            'home.html',
-            {'new_item_text': '신규 작업 아이템'}
-        )
+    def test_home_page_only_saves_items_when_necessary(self):
+        request = HttpRequest()
+        home_page(request)
+        self.assertEqual(Item.objects.count(), 0)
 
-        self.assertEqual(response.content.decode(), expected_html)
+    def test_home_page_displays_all_list_items(self):
+        Item.objects.create(text='첫 번째 아이템')
+        Item.objects.create(text='두 번째 아이템')
+
+        request = HttpRequest()
+        response = home_page(request)
+
+        self.assertIn('첫 번째 아이템', response.content.decode())
+        self.assertIn('두 번째 아이템', response.content.decode())
 
 
 class ItemModelTest(TestCase):
